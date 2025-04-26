@@ -16,4 +16,5 @@ docker-compose up
 To access FastAPI swagger :
 http://127.0.0.1:8000/docs#
 
-To get 
+To get Kafka-UI
+http://localhost:8080/
