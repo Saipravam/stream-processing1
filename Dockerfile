@@ -2,10 +2,10 @@ FROM python:3.12
 
 WORKDIR /app
 
-COPY ./app /app/app
+COPY user-service/ .
 
 # Install dependencies
-COPY requirements.txt .
+COPY user-service/requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 

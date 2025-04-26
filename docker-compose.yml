@@ -1,13 +1,15 @@
-version: '3.8'
 services:
   postgres:
     image: postgres:14
+    container_name: postgres
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: userdb
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
     ports:
       - "5432:5432"
+    networks:
+      - app-network
   zookeeper:
     image: bitnami/zookeeper:latest
     container_name: zookeeper
@@ -15,44 +17,59 @@ services:
       ALLOW_ANONYMOUS_LOGIN: yes
     ports:
       - "2181:2181"
+    networks:
+      - app-network
   kafka:
     image: bitnami/kafka:3.2.3
     container_name: kafka
+    depends_on:
+      - zookeeper
     environment:
       KAFKA_CFG_KRAFT_MODE: false
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_CFG_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: true
       KAFKA_CFG_BROKER_ID: 1
       ALLOW_PLAINTEXT_LISTENER: yes
       KAFKA_CFG_ZOOKEEPER_METADATA_MIGRATION_ENABLE: false
     ports:
       - "9092:9092"
-    depends_on:
-      - zookeeper
+    networks:
+      - app-network
   user-service:
-    build: ./user-service
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: user-service
     ports:
       - "8000:8000"
     environment:
       KAFKA_BROKER: kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC: user-events
       POSTGRES_HOST: postgres
     depends_on:
-      - kafka
       - postgres
+      - kafka
     restart: always
+    networks:
+      - app-network
   consumer-service:
-    build: ./consumer-service
+    build:
+      context: .
+      dockerfile: Dockerfile.consumer
     container_name: consumer-service
     environment:
       - KAFKA_BROKER=kafka:9092
     depends_on:
       - kafka
     restart: always
-
-kafka-ui:
+    networks:
+      - app-network
+  kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
     ports:
@@ -61,5 +78,9 @@ kafka-ui:
       - kafka
     environment:
       KAFKA_CLUSTERS_0_NAME: local-kafka
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: localhost:9092
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: 172.18.0.4:9092 # docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' kafka (get ip and replace)
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://localhost:8081
+networks:
+  app-network:
+    driver: bridge

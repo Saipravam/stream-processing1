@@ -1,25 +1,15 @@
-import psycopg2
+from sqlalchemy import create_engine
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 import os
 
-conn = psycopg2.connect(
-    host=os.getenv("POSTGRES_HOST", "localhost"),
-    database="userdb",
-    user="postgres",
-    password="password"
-)
-cursor = conn.cursor()
+class Base(DeclarativeBase):
+    pass
 
-cursor.execute('''CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name TEXT, email TEXT, phone INT)''')
-conn.commit()
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@postgres:5432/postgres")
 
-def create_user_db(user):
-    cursor.execute('INSERT INTO users (name, email, phone) VALUES (%s, %s, %s)', (user['name'], user['email'], user['phone']))
-    conn.commit()
+engine = create_engine(DATABASE_URL)
 
-def update_user_db(user_id, user):
-    cursor.execute('UPDATE users SET name=%s, email=%s, phone=%s WHERE id=%s', (user['name'], user['email'],user['phone'], user_id))
-    conn.commit()
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-def delete_user_db(user_id):
-    cursor.execute('DELETE FROM users WHERE id=%s', (user_id))
-    conn.commit()
+def init_db():
+    Base.metadata.create_all(bind=engine)

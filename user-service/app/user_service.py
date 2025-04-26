@@ -1,23 +1,31 @@
-from fastapi import FastAPI, HTTPException
-from app.database import create_user_db, update_user_db, delete_user_db
-from app.kafka_producer import publish_event
+# from sqlalchemy.orm import Session
+# from app import models, schemas, producer
 
-app = FastAPI()
+# def create_user_service(db: Session, user: schemas.UserCreate) -> models.User:
+#     db_user = models.User(**user.dict())
+#     db.add(db_user)
+#     db.commit()
+#     db.refresh(db_user)
+#     producer.send_user_created_event(db_user.id, user.dict())
+#     return db_user
 
-@app.post("/users")
-async def create_user(user: dict):
-    create_user_db(user)
-    publish_event("user-events", {"action": "create", "user": user})
-    return {"status": "User created"}
+# def get_all_users_service(db: Session):
+#     return db.query(models.User).all()
 
-@app.put("/users/{user_id}")
-async def update_user(user_id: int, user: dict):
-    update_user_db(user_id, user)
-    publish_event("user-events", {"action": "update", "user_id": user_id, "user": user})
-    return {"status": "User updated"}
+# def update_user_service(db: Session, user_id: int, user: schemas.UserUpdate):
+#     db_user = db.query(models.User).filter(models.User.id == user_id).first()
+#     if not db_user:
+#         return None
+#     for key, value in user.dict(exclude_unset=True).items():
+#         setattr(db_user, key, value)
+#     db.commit()
+#     db.refresh(db_user)
+#     return db_user
 
-@app.delete("/users/{user_id}")
-async def delete_user(user_id: int):
-    delete_user_db(user_id)
-    publish_event("user-events", {"action": "delete", "user_id": user_id})
-    return {"status": "User deleted"}
+# def delete_user_service(db: Session, user_id: int):
+#     db_user = db.query(models.User).filter(models.User.id == user_id).first()
+#     if not db_user:
+#         return False
+#     db.delete(db_user)
+#     db.commit()
+#     return True

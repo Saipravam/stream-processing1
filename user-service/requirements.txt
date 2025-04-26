@@ -1,9 +1,7 @@
 fastapi
-uvicorn
+uvicorn[standard]
 pydantic[email]
 sqlalchemy
-asyncpg
 psycopg2-binary
 kafka-python
-python-dotenv
 

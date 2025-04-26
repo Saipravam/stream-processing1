@@ -1,27 +1,30 @@
-from kafka import KafkaConsumer
+import json
+import os
 import time
+from kafka import KafkaConsumer
+from kafka.errors import NoBrokersAvailable
 
+# KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
+# KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", "user-events")
+
+KAFKA_BROKER = "kafka:9092"
 TOPIC_NAME = "user-events"
-BOOTSTRAP_SERVERS = "kafka:9092"
-GROUP_ID = "user-group"
 
-consumer = None
-
-while consumer is None:
+# Retry loop to wait for Kafka
+while True:
     try:
-        print("Trying to connect to Kafka...")
         consumer = KafkaConsumer(
             TOPIC_NAME,
-            bootstrap_servers=BOOTSTRAP_SERVERS,
+            bootstrap_servers=KAFKA_BROKER,
+            group_id="my-consumer-group",
             auto_offset_reset="earliest",
-            group_id=GROUP_ID,
         )
         print("Connected to Kafka successfully!")
-    except Exception as e:
-        print(f"Kafka connection failed: {e}")
-        print("Retrying in 5 seconds...")
+        break
+    except NoBrokersAvailable:
+        print("Kafka broker not available yet, retrying in 5 seconds...")
         time.sleep(5)
 
-# Now consumer is ready, listen forever
+# Now you can start consuming messages
 for message in consumer:
     print(f"Received message: {message.value.decode('utf-8')}")

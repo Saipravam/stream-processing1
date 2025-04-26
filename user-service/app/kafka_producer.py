@@ -1,15 +1,46 @@
 from kafka import KafkaProducer
 import json
 import os
-import time
 
-KAFKA_BROKER = os.getenv("KAFKA_BROKER", "localhost:9092")
+producer = None
 
-producer = KafkaProducer(
-    bootstrap_servers=[KAFKA_BROKER],
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
-)
+# Kafka config
+# KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
+# KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", "user-events")
 
-def publish_event(topic, event):
-    producer.send(topic, value=event)
+# Create Kafka producer
+def init_kafka_producer():
+    global producer
+    if producer is None:
+      producer = KafkaProducer(
+        bootstrap_servers='kafka:9092',
+        value_serializer=lambda v: json.dumps(v).encode('utf-8')
+    )
+    return producer
+
+def publish_user_created_event(user):
+    global producer
+    if producer is None:
+        producer = init_kafka_producer()
+    user_data = {
+        "id": user.id,
+        "name": user.name,
+        "email": user.email,
+        "phone": user.phone,
+    }
+     # Send the message
+    future = producer.send('user-events', value=user_data)
+
+    # Define success and error handlers
+    def on_success(record_metadata):
+        print(f"[SUCCESS] Message sent to topic={record_metadata.topic}, partition={record_metadata.partition}, offset={record_metadata.offset}")
+
+    def on_error(excp):
+        print(f"[ERROR] Failed to send message: {excp}")
+
+    # Attach callbacks
+    future.add_callback(on_success)
+    future.add_errback(on_error)
+
+    # Force flush to send immediately
     producer.flush()
