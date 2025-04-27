@@ -27,9 +27,9 @@ services:
     environment:
       KAFKA_CFG_KRAFT_MODE: false
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_CFG_LISTENERS: PLAINTEXT://0.0.0.0:9092
-      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_CFG_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:9093
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: true
       KAFKA_CFG_BROKER_ID: 1
@@ -37,6 +37,7 @@ services:
       KAFKA_CFG_ZOOKEEPER_METADATA_MIGRATION_ENABLE: false
     ports:
       - "9092:9092"
+      - "9093:9093"
     networks:
       - app-network
   user-service:
@@ -76,11 +77,14 @@ services:
       - "8080:8080"
     depends_on:
       - kafka
+    networks:
+      - app-network
     environment:
       KAFKA_CLUSTERS_0_NAME: local-kafka
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: 172.18.0.4:9092 # docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' kafka (get ip and replace)
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092 # docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' kafka (get ip and replace)
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
       KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://localhost:8081
+
 networks:
   app-network:
     driver: bridge
