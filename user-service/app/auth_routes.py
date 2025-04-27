@@ -32,7 +32,7 @@
 #     access_token = auth.create_access_token(data={"sub": user.email})
 #     return {"access_token": access_token, "token_type": "bearer"}
 
-# # PROTECTED Endpoint 🚀
+# # PROTECTED Endpoint 
 # @app.get("/protected-route")
 # def protected_route(token: str = Depends(oauth2_scheme)):
 #     payload = auth.decode_access_token(token)
