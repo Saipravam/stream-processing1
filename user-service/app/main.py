@@ -2,14 +2,12 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from app import models, schemas, database,kafka_producer
-# from app.kafka_producer import init_kafka_producer
 from app.database import SessionLocal, engine
+from app import auth
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
-# init_kafka_producer()
 
 # Initialize DB
 database.init_db()
@@ -22,20 +20,44 @@ def get_db():
     finally:
         db.close()
 
+# Register user (updated)
+@app.post("/register", response_model=schemas.UserOut)
+def register_user(user: schemas.UserRegister, db: Session = Depends(get_db)):
+    existing_user = db.query(models.User).filter(models.User.email == user.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered.")
+
+    hashed_password = auth.get_password_hash(user.password)
+    db_user = models.User(
+        name=user.name,
+        email=user.email,
+        phone=user.phone,
+        hashed_password=hashed_password
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    kafka_producer.publish_user_registered_event(db_user)
+    return db_user
+
 # Create User
 @app.post("/users", response_model=schemas.UserOut)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(models.User).filter(models.User.email == user.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered.")
-    db_user = models.User(name=user.name, email=user.email, phone=user.phone)
+
+    db_user = models.User(
+        name=user.name, 
+        email=user.email, 
+        phone=user.phone,
+        )
     db.add(db_user)
     try:
        db.commit()
        db.refresh(db_user)
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=400, detail="Email already registered.")
     kafka_producer.publish_user_created_event(db_user)
     return db_user
 

@@ -28,3 +28,11 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         "message": "User created successfully",
         "user": db_user
     }
+
+@router.post("/users", response_model=schemas.UserRegisterResponse)
+def create_user(user: schemas.UserRegister, db: Session = Depends(get_db)):
+    db_user = crud.register_user(db, user)
+    return {
+        "message": "User registered successfully",
+        "user": db_user
+    }

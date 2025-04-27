@@ -4,6 +4,7 @@ import json
 producer = None
 
 # Kafka event types
+USER_REGISTERED = "USER_REGISTERED"
 USER_CREATED = "USER_CREATED"
 USER_FETCHED = "USER_FETCHED"
 USER_UPDATED = "USER_UPDATED"
@@ -38,13 +39,23 @@ def _send_event(payload):
     # Force flush immediately
     producer.flush()
 
+def publish_user_registered_event(user):
+    payload = {
+           "event_type": USER_REGISTERED,
+           "id": user.id,
+           "name": user.name,
+           "email": user.email,
+           "phone": user.phone
+    }
+    _send_event(payload)
+
 def publish_user_created_event(user):
     payload = {
         "event_type": USER_CREATED,
         "id": user.id,
         "name": user.name,
         "email": user.email,
-        "phone": user.phone,
+        "phone": user.phone
     }
     _send_event(payload)
 
