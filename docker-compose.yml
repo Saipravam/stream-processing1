@@ -91,7 +91,9 @@ services:
       KAFKA_CLUSTERS_0_NAME: local-kafka
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092 # docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' kafka (get ip and replace)
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
-      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://localhost:8081
+      # KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://localhost:8081
+      KAFKA_CLUSTERS_0_CONSUMER_GROUP: kafka-ui-live
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: PLAINTEXT
 
 networks:
   app-network:

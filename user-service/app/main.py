@@ -2,14 +2,14 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from app import models, schemas, database,kafka_producer
-from app.kafka_producer import init_kafka_producer
+# from app.kafka_producer import init_kafka_producer
 from app.database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-init_kafka_producer()
+# init_kafka_producer()
 
 # Initialize DB
 database.init_db()
@@ -43,6 +43,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 @app.get("/users", response_model=list[schemas.UserOut])
 def get_users(db: Session = Depends(get_db)):
     users = db.query(models.User).all()
+    kafka_producer.publish_users_listed_event()
     return users
 
 # Update User
@@ -57,6 +58,7 @@ def update_user(user_id: int, user: schemas.UserUpdate, db: Session = Depends(ge
 
     db.commit()
     db.refresh(db_user)
+    kafka_producer.publish_user_updated_event(db_user)
     return db_user
 
 # Delete User
@@ -67,4 +69,5 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     db.delete(db_user)
     db.commit()
+    kafka_producer.publish_user_deleted_event(user_id)
     return {"message": "User deleted successfully"}
