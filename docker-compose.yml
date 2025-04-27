@@ -10,6 +10,11 @@ services:
       - "5432:5432"
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   zookeeper:
     image: bitnami/zookeeper:latest
     container_name: zookeeper
@@ -52,9 +57,12 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       KAFKA_TOPIC: user-events
       POSTGRES_HOST: postgres
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres
     depends_on:
-      - postgres
-      - kafka
+      postgres:
+         condition: service_healthy
+      kafka:
+         condition: service_started
     restart: always
     networks:
       - app-network
