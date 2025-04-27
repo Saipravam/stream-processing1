@@ -10,7 +10,6 @@ services:
       - "5432:5432"
     networks:
       - app-network
-
   zookeeper:
     image: bitnami/zookeeper:latest
     container_name: zookeeper
