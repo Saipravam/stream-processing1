@@ -19,7 +19,6 @@ while True:
             group_id="my-consumer-group",
             auto_offset_reset="earliest",
             enable_auto_commit=False,
-            group_id='my-consumer-group'
         )
         print("Connected to Kafka successfully!")
         break
